@@ -137,7 +137,7 @@ module "website-bucket" {
   server_side_encryption_configuration = {
     rule = {
       apply_server_side_encryption_by_default = {
-        sse_algorithm     = "aws:kms"
+        sse_algorithm = "aws:kms"
       }
     }
   }
@@ -173,16 +173,16 @@ module "log_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "v3.15.1"
 
-  bucket = "logs-${random_pet.this.id}"
-  acl    = null
+  bucket                   = "logs-${random_pet.this.id}"
+  control_object_ownership = true
   grant = [{
-    type        = "CanonicalUser"
+    type       = "CanonicalUser"
     permission = "FULL_CONTROL"
-    id          = data.aws_canonical_user_id.current.id
+    id         = data.aws_canonical_user_id.current.id
     }, {
-    type        = "CanonicalUser"
+    type       = "CanonicalUser"
     permission = "FULL_CONTROL"
-    id          = "c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0"
+    id         = "c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0"
     # Ref. https://github.com/terraform-providers/terraform-provider-aws/issues/12512
     # Ref. https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html
   }]
@@ -196,7 +196,7 @@ module "log_bucket" {
   server_side_encryption_configuration = {
     rule = {
       apply_server_side_encryption_by_default = {
-        sse_algorithm     = "aws:kms"
+        sse_algorithm = "aws:kms"
       }
     }
   }
