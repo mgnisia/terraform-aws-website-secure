@@ -2,7 +2,7 @@ data "aws_canonical_user_id" "current" {}
 
 module "cloudfront" {
   source  = "terraform-aws-modules/cloudfront/aws"
-  version = "3.1.0"
+  version = "3.2.1"
 
   aliases = [var.domain]
 
@@ -171,7 +171,7 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
 
 module "log_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "3.6.0"
+  version = "3.15.1"
 
   bucket = "logs-${random_pet.this.id}"
   acl    = null
