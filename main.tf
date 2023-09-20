@@ -10,7 +10,7 @@ resource "random_pet" "this" {
   length = 2
 }
 data "aws_route53_zone" "this" {
-  name = var.domain
+  name = var.route53_zone_name
 }
 
 module "lambda_function" {

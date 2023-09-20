@@ -125,7 +125,7 @@ module "cloudfront" {
 
 module "website-bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "3.6.0"
+  version = "v3.15.1"
 
   bucket                  = "s3-${random_pet.this.id}"
   force_destroy           = true
@@ -171,17 +171,17 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
 
 module "log_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "3.15.1"
+  version = "v3.15.1"
 
   bucket = "logs-${random_pet.this.id}"
   acl    = null
   grant = [{
     type        = "CanonicalUser"
-    permissions = ["FULL_CONTROL"]
+    permission = "FULL_CONTROL"
     id          = data.aws_canonical_user_id.current.id
     }, {
     type        = "CanonicalUser"
-    permissions = ["FULL_CONTROL"]
+    permission = "FULL_CONTROL"
     id          = "c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0"
     # Ref. https://github.com/terraform-providers/terraform-provider-aws/issues/12512
     # Ref. https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html
