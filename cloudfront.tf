@@ -113,7 +113,7 @@ module "cloudfront" {
   ]
 
   viewer_certificate = {
-    acm_certificate_arn = module.acm.acm_certificate_arn
+    acm_certificate_arn = var.acm_arn
     ssl_support_method  = "sni-only"
   }
 
@@ -175,6 +175,7 @@ module "log_bucket" {
 
   bucket                   = "logs-${random_pet.this.id}"
   control_object_ownership = true
+  object_ownership         = "BucketOwnerPreferred"
   grant = [{
     type       = "CanonicalUser"
     permission = "FULL_CONTROL"

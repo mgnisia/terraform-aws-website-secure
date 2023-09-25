@@ -84,3 +84,20 @@ variable "content_html_rewrite" {
   default     = false
   type        = bool
 }
+
+variable "acm_arn" {}
+
+variable "lambda_arn" {
+  description = "ARN of the lambda function which should be used as origin"
+}
+
+variable "user_pool_arn" {
+  type = string
+}
+variable "client_id" {
+
+  type = string
+}
+variable "client_secret" {
+  type = string
+}

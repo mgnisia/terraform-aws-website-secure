@@ -22,9 +22,9 @@ module "lambda_function" {
   function = each.value
   configuration = jsondecode(<<EOF
 {
-  "userPoolArn": "${module.cognito-user-pool.arn}",
-  "clientId": "${module.cognito-user-pool.client_ids[0]}",
-  "clientSecret": "${module.cognito-user-pool.client_secrets[0]}",
+  "userPoolArn": "${var.user_pool_arn}",
+  "clientId": "${var.client_id}",
+  "clientSecret": "${var.client_secret}",
   "oauthScopes": ["openid"],
   "cognitoAuthDomain": "${var.cognito_domain_prefix}.${var.domain}",
   "redirectPathSignIn": "${var.cognito_path_parse_auth}",
@@ -54,18 +54,18 @@ EOF
   }
 }
 
-module "acm" {
-  source  = "terraform-aws-modules/acm/aws"
-  version = "4.3.1"
+# module "acm" {
+#   source  = "terraform-aws-modules/acm/aws"
+#   version = "4.3.1"
 
-  domain_name               = var.domain
-  subject_alternative_names = ["*.${var.domain}"]
-  zone_id                   = data.aws_route53_zone.this.id
+#   domain_name               = var.domain
+#   subject_alternative_names = ["*.${var.domain}"]
+#   zone_id                   = data.aws_route53_zone.this.id
 
-  providers = {
-    aws = aws.us-east-1
-  }
-}
+#   providers = {
+#     aws = aws.us-east-1
+#   }
+# }
 
 module "records" {
   source  = "terraform-aws-modules/route53/aws//modules/records"
@@ -85,37 +85,3 @@ module "records" {
   ]
 }
 
-module "cognito-user-pool" {
-  source  = "lgallard/cognito-user-pool/aws"
-  version = "0.20.1"
-
-  user_pool_name         = "${var.name}-userpool"
-  domain                 = "${var.cognito_domain_prefix}.${var.domain}"
-  domain_certificate_arn = module.acm.acm_certificate_arn
-
-  clients = [
-    {
-      name                         = "${var.name}-client"
-      supported_identity_providers = ["COGNITO"]
-
-      generate_secret                      = true
-      allowed_oauth_flows_user_pool_client = true
-      allowed_oauth_flows                  = ["code"]
-      allowed_oauth_scopes                 = ["openid"]
-      callback_urls                        = local.callback_urls
-      logout_urls                          = local.logout_urls
-    },
-  ]
-}
-
-resource "aws_route53_record" "cognito-domain" {
-  name    = "${var.cognito_domain_prefix}.${var.domain}"
-  type    = "A"
-  zone_id = data.aws_route53_zone.this.zone_id
-  alias {
-    evaluate_target_health = false
-    name                   = module.cognito-user-pool.domain_cloudfront_distribution_arn
-    # This zone_id is fixed
-    zone_id = "Z2FDTNDATAQYW2"
-  }
-}
