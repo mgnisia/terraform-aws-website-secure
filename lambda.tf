@@ -147,7 +147,7 @@ resource "aws_iam_policy" "authorizer_lambda_function_role" {
   })
 }
 
-source "aws_iam_role_policy_attachment" "authorizer_lambda_function_role" {
+resource "aws_iam_role_policy_attachment" "authorizer_lambda_function_role" {
   role       = aws_iam_role.authorizer_lambda_function_role.name
   policy_arn = aws_iam_policy.authorizer_lambda_function_role.arn
 }

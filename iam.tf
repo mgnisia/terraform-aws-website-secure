@@ -55,8 +55,7 @@ resource "aws_iam_policy" "origin_secret_rotate_function" {
 }
 
 
-
-source "aws_iam_role_policy_attachment" "origin_secret_rotate_function" {
+resource "aws_iam_role_policy_attachment" "origin_secret_rotate_function" {
   role       = aws_iam_role.origin_secret_rotate_function.name
   policy_arn = aws_iam_policy.origin_secret_rotate_function.arn
 }
