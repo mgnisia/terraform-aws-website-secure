@@ -48,7 +48,7 @@ resource "aws_iam_policy" "origin_secret_rotate_function" {
           "cloudfront:ListDistributions",
           "cloudfront:UpdateDistribution"
         ]
-        Resource = "arn:${data.aws_partition.current.partition}:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.cloud_front_distribution.id}"
+        Resource = "arn:${data.aws_partition.current.partition}:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${module.cloudfront.cloudfront_distribution_id}"
       }
     ]
   })

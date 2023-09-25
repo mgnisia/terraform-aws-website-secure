@@ -50,7 +50,7 @@ resource "aws_secretsmanager_secret_rotation" "origin_verify_rotate_schedule" {
 }
 
 resource "aws_iam_role" "origin_secret_rotate_execution_role" {
-  assume_role_policy = {
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -61,7 +61,7 @@ resource "aws_iam_role" "origin_secret_rotate_execution_role" {
         Action = "sts:AssumeRole"
       }
     ]
-  }
+  })
 }
 
 resource "aws_lambda_function" "origin_secret_rotate_function" {
@@ -70,7 +70,7 @@ resource "aws_lambda_function" "origin_secret_rotate_function" {
   runtime     = "python3.7"
   environment {
     variables = {
-      CFDISTROID = aws_cloudfront_distribution.cloud_front_distribution.id
+      CFDISTROID = module.cloudfront.cloudfront_distribution_id
       HEADERNAME = "x-origin-verify"
       ORIGINURL  = "${aws_apigatewayv2_api.api_gateway.api_endpoint}"
     }
@@ -78,16 +78,37 @@ resource "aws_lambda_function" "origin_secret_rotate_function" {
   role = aws_iam_role.origin_secret_rotate_execution_role.arn
 }
 
+locals {
+  authorizer_lambda_zip = "${var.prefix}-authorizer-lambda.zip"
+  rotate_secret_lambda_zip = "${var.prefix}-rotate-secret-lambda.zip"
+}
+
+
+data "archive_file" "lambda_authorizer" {
+  type = "zip"
+  source_file = "lambda-cloudfront-secret-rotation/authorizer.py"
+  output_path = local.authorizer_lambda_zip
+}
+
+data "archive_file" "lambda_authorizer" {
+  type = "zip"
+  source_file = "lambda-cloudfront-secret-rotation/rotate-secret.py"
+  output_path = local.authorizer_lambda_zip
+}
+
 resource "aws_lambda_function" "authorizer_lambda" {
   description = "Authorizer Lambda Function"
+  filename = local.authorizer_lambda_zip
+  source_code_hash = data.archive_file.lambda_authorizer.output_base64sha256
   runtime     = "python3.7"
   timeout     = 900
   handler     = "index.lambda_handler"
+  function_name = "${var.prefix}-${var.name}-authorizer-lambda"
   role        = aws_iam_role.authorizer_lambda_function_role.arn
 }
 
 resource "aws_iam_role" "authorizer_lambda_function_role" {
-  assume_role_policy = {
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -102,7 +123,7 @@ resource "aws_iam_role" "authorizer_lambda_function_role" {
         ]
       }
     ]
-  }
+  })
   path = "/"
 }
 
@@ -198,16 +219,16 @@ resource "aws_api_gateway_authorizer" "api_gw_authorizer" {
 resource "aws_lambda_permission" "authorizer_lambda_permission" {
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"
-  function_name = aws_lambda_function.authorizer_lambda.arn
+  function_name = aws_lambda_function.authorizer_lambda.function_name
   source_arn    = "arn:${data.aws_partition.current.partition}:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.api_gateway.id}/${"*"}/*"
 }
 
-resource "aws_lambda_permission" "sample_website_lambda_permission" {
-  action        = "lambda:InvokeFunction"
-  principal     = "apigateway.amazonaws.com"
-  function_name = var.lambda_arn
-  source_arn    = "arn:${data.aws_partition.current.partition}:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.api_gateway.id}/${"*"}/*"
-}
+# resource "aws_lambda_permission" "sample_website_lambda_permission" {
+#   action        = "lambda:InvokeFunction"
+#   principal     = "apigateway.amazonaws.com"
+#   function_name = var.lambda_arn
+#   source_arn    = "arn:${data.aws_partition.current.partition}:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.api_gateway.id}/${"*"}/*"
+# }
 
 resource "aws_lb_target_group" "api_log_group" {
   name = "HTTPApiAccessLogs"
