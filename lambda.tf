@@ -43,8 +43,8 @@ resource "aws_lambda_permission" "rotate_function_invoke_permission" {
 
 resource "aws_secretsmanager_secret_rotation" "origin_verify_rotate_schedule" {
   rotation_lambda_arn = aws_lambda_function.origin_secret_rotate_function.arn
-  rotation_rules = {
-    AutomaticallyAfterDays = var.rotate_interval
+  rotation_rules {
+    automatically_after_days = var.rotate_interval
   }
   secret_id = aws_secretsmanager_secret.origin_verify_secret.id
 }
@@ -67,7 +67,7 @@ resource "aws_iam_role" "origin_secret_rotate_execution_role" {
 resource "aws_lambda_function" "origin_secret_rotate_function" {
   description      = "Secrets Manager Rotation Lambda"
   handler          = "index.lambda_handler"
-  runtime          = "python3.11"
+  runtime          = "python3.9"
   filename         = local.rotate_secret_lambda_zip
     function_name    = "${var.prefix}-${var.name}-secret-rotation"
 
@@ -104,7 +104,7 @@ resource "aws_lambda_function" "authorizer_lambda" {
   description      = "Authorizer Lambda Function"
   filename         = local.authorizer_lambda_zip
   source_code_hash = data.archive_file.lambda_authorizer.output_base64sha256
-  runtime          = "python3.7"
+  runtime          = "python3.9"
   timeout          = 900
   handler          = "index.lambda_handler"
   function_name    = "${var.prefix}-${var.name}-authorizer-lambda"
@@ -201,11 +201,11 @@ resource "aws_apigatewayv2_integration" "api_gw_integration" {
 
 resource "aws_apigatewayv2_stage" "api_gw_stage" {
   name        = "$default"
-  auto_deploy = True
+  auto_deploy = true
   api_id      = aws_apigatewayv2_api.api_gateway.id
-  access_log_settings = {
-    DestinationArn = aws_lb_target_group.api_log_group.arn
-    # Format = "{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","routeKey":"$context.routeKey","status":"$context.status"}"
+  access_log_settings  {
+    destination_arn = aws_lb_target_group.api_log_group.arn
+    format = "{\"requestId\":\"$context.requestId\", \"ip\": \"$context.identity.sourceIp\",\"caller\":\"$context.identity.caller\",\"user\":\"$context.identity.user\",\"requestTime\":\"$context.requestTime\",\"routeKey\":\"$context.routeKey\",\"status\":\"$context.status\"}"
   }
 }
 
