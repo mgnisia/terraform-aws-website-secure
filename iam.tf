@@ -1,5 +1,5 @@
 
-resource "aws_iam_policy" "origin_secret_rotate_function" {
+resource "aws_iam_policy" "origin_secret_rotate_execution_role" {
   name        = "ecr-push-policy"
   description = "Policy to allow pushing to all ECR repositories"
 
@@ -56,6 +56,6 @@ resource "aws_iam_policy" "origin_secret_rotate_function" {
 
 
 resource "aws_iam_role_policy_attachment" "origin_secret_rotate_function" {
-  role       = aws_iam_role.origin_secret_rotate_function.name
-  policy_arn = aws_iam_policy.origin_secret_rotate_function.arn
+  role       = aws_iam_role.origin_secret_rotate_execution_role.name
+  policy_arn = aws_iam_policy.origin_secret_rotate_execution_role.arn
 }

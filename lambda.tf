@@ -65,9 +65,13 @@ resource "aws_iam_role" "origin_secret_rotate_execution_role" {
 }
 
 resource "aws_lambda_function" "origin_secret_rotate_function" {
-  description = "Secrets Manager Rotation Lambda"
-  handler     = "index.lambda_handler"
-  runtime     = "python3.7"
+  description      = "Secrets Manager Rotation Lambda"
+  handler          = "index.lambda_handler"
+  runtime          = "python3.11"
+  filename         = local.rotate_secret_lambda_zip
+    function_name    = "${var.prefix}-${var.name}-secret-rotation"
+
+  source_code_hash = data.archive_file.lambda_rotate_secret.output_base64sha256
   environment {
     variables = {
       CFDISTROID = module.cloudfront.cloudfront_distribution_id
@@ -79,32 +83,32 @@ resource "aws_lambda_function" "origin_secret_rotate_function" {
 }
 
 locals {
-  authorizer_lambda_zip = "${var.prefix}-authorizer-lambda.zip"
+  authorizer_lambda_zip    = "${var.prefix}-authorizer-lambda.zip"
   rotate_secret_lambda_zip = "${var.prefix}-rotate-secret-lambda.zip"
 }
 
 
 data "archive_file" "lambda_authorizer" {
-  type = "zip"
+  type        = "zip"
   source_file = "lambda-cloudfront-secret-rotation/authorizer.py"
   output_path = local.authorizer_lambda_zip
 }
 
-data "archive_file" "lambda_authorizer" {
-  type = "zip"
+data "archive_file" "lambda_rotate_secret" {
+  type        = "zip"
   source_file = "lambda-cloudfront-secret-rotation/rotate-secret.py"
-  output_path = local.authorizer_lambda_zip
+  output_path = local.rotate_secret_lambda_zip
 }
 
 resource "aws_lambda_function" "authorizer_lambda" {
-  description = "Authorizer Lambda Function"
-  filename = local.authorizer_lambda_zip
+  description      = "Authorizer Lambda Function"
+  filename         = local.authorizer_lambda_zip
   source_code_hash = data.archive_file.lambda_authorizer.output_base64sha256
-  runtime     = "python3.7"
-  timeout     = 900
-  handler     = "index.lambda_handler"
-  function_name = "${var.prefix}-${var.name}-authorizer-lambda"
-  role        = aws_iam_role.authorizer_lambda_function_role.arn
+  runtime          = "python3.7"
+  timeout          = 900
+  handler          = "index.lambda_handler"
+  function_name    = "${var.prefix}-${var.name}-authorizer-lambda"
+  role             = aws_iam_role.authorizer_lambda_function_role.arn
 }
 
 resource "aws_iam_role" "authorizer_lambda_function_role" {
@@ -210,10 +214,8 @@ resource "aws_api_gateway_authorizer" "api_gw_authorizer" {
   rest_api_id = aws_apigatewayv2_api.api_gateway.id
   type        = "REQUEST"
   // CF Property(EnableSimpleResponses) = True
-  authorizer_uri = "arn:${data.aws_partition.current.partition}:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${aws_lambda_function.authorizer_lambda.arn}/invocations"
-  identity_source = [
-    "$request.header.x-origin-verify"
-  ]
+  authorizer_uri  = "arn:${data.aws_partition.current.partition}:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${aws_lambda_function.authorizer_lambda.arn}/invocations"
+  identity_source = "$request.header.x-origin-verify"
 }
 
 resource "aws_lambda_permission" "authorizer_lambda_permission" {
