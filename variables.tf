@@ -38,8 +38,8 @@ variable "csp" {
   })
   default = {
     allow_default  = [],
-    allow_script   = [],
-    allow_style    = [],
+    allow_script   = ["https://cdn.jsdelivr.net"],
+    allow_style    = ["https://cdn.jsdelivr.net"],
     allow_img      = [],
     allow_font     = ["https://fonts.gstatic.com"],
     allow_frame    = [],
@@ -90,6 +90,12 @@ variable "acm_arn" {}
 variable "lambda_arn" {
   description = "ARN of the lambda function which should be used as origin"
 }
+variable "lambda_name" {
+  description = "ARN of the lambda function which should be used as origin"
+}
+variable "lambda_version" {
+  description = "ARN of the lambda function which should be used as origin"
+}
 
 variable "user_pool_arn" {
   type = string
@@ -104,4 +110,8 @@ variable "client_secret" {
 
 variable "prefix" {
   default = "dev"
+}
+
+variable "s3_bucket_name" {
+  default = "lsc-fastapi"
 }

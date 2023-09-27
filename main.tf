@@ -33,7 +33,7 @@ module "lambda_function" {
   "cookieSettings": { "idToken": null, "accessToken": null, "refreshToken": null, "nonce": null },
   "mode": "spaMode",
   "httpHeaders": {
-      "Content-Security-Policy": "default-src 'none'; img-src 'self'; script-src 'self' https://code.jquery.com https://stackpath.bootstrapcdn.com; style-src 'self' 'unsafe-inline' https://stackpath.bootstrapcdn.com; object-src 'none'; connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com",
+      "Content-Security-Policy": "default-src 'none'; img-src 'self' https://fastapi.tiangolo.com; script-src 'self' https://code.jquery.com https://stackpath.bootstrapcdn.com https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://stackpath.bootstrapcdn.com; object-src 'none'; connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com",
       "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
       "Referrer-Policy": "same-origin",
       "X-XSS-Protection": "1; mode=block",
@@ -75,6 +75,7 @@ module "records" {
 
   records = [
     {
+      # FIXME
       name = ""
       type = "A"
       alias = {

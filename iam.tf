@@ -1,6 +1,6 @@
 
 resource "aws_iam_policy" "origin_secret_rotate_execution_role" {
-  name        = "ecr-push-policy"
+  name        = "secret-rotate-policy"
   description = "Policy to allow pushing to all ECR repositories"
 
   policy = jsonencode({

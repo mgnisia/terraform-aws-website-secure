@@ -1,25 +1,56 @@
 data "aws_canonical_user_id" "current" {}
 
+data "aws_secretsmanager_secret" "secrets" {
+  arn = aws_secretsmanager_secret.origin_verify_secret.arn
+}
+
+data "aws_secretsmanager_secret_version" "current" {
+  secret_id = data.aws_secretsmanager_secret.secrets.id
+}
+
 module "cloudfront" {
   source  = "terraform-aws-modules/cloudfront/aws"
   version = "3.2.1"
 
   aliases = [var.domain]
 
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-  price_class         = "PriceClass_100"
+  is_ipv6_enabled = true
+  # default_root_object = "index.html"
+  price_class = "PriceClass_100"
 
-  create_origin_access_identity = true
-  origin_access_identities = {
-    website = "Access website content"
-  }
+  create_origin_access_identity = false
+  # origin_access_identities = {
+  #   website = "Access website content"
+  # }
 
   origin = {
-    s3 = {
-      domain_name = module.website-bucket.s3_bucket_bucket_regional_domain_name
-      s3_origin_config = {
-        origin_access_identity = "website"
+    # s3 = {
+    #   domain_name = module.website-bucket.s3_bucket_bucket_regional_domain_name
+    #   # s3_origin_config = {
+    #   #   origin_access_identity = "website"
+    #   # }
+    # }
+    api = {
+      connection_attempts      = 3
+      connection_timeout       = 10
+      domain_name              = trim(aws_apigatewayv2_api.api_gateway.api_endpoint, "https://")
+      origin_access_control_id = null
+      origin_id                = "apiGwOrigin"
+      origin_path              = null
+      custom_header = {
+        secret = {
+          name  = "x-origin-verify"
+          value = jsondecode(nonsensitive(data.aws_secretsmanager_secret_version.current.secret_string))["HEADERVALUE"]
+          # value = "LRM7T1B2tPdcE8xxzRqfwHPK0UKcYDyf"
+        }
+      }
+      custom_origin_config = {
+        http_port                = 80
+        https_port               = 443
+        origin_keepalive_timeout = 5
+        origin_protocol_policy   = "https-only"
+        origin_read_timeout      = 30
+        origin_ssl_protocols     = ["TLSv1.2"]
       }
     }
 
@@ -35,8 +66,8 @@ module "cloudfront" {
   }
 
   default_cache_behavior = {
-    target_origin_id       = "s3"
-    viewer_protocol_policy = "allow-all"
+    target_origin_id       = "apiGwOrigin"
+    viewer_protocol_policy = "redirect-to-https"
 
     allowed_methods = ["GET", "HEAD", "OPTIONS"]
     cached_methods  = ["GET", "HEAD"]
@@ -127,7 +158,7 @@ module "website-bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "v3.15.1"
 
-  bucket                  = "s3-${random_pet.this.id}"
+  bucket                  = "s3-${var.s3_bucket_name}"
   force_destroy           = true
   restrict_public_buckets = true
   ignore_public_acls      = true
@@ -150,23 +181,6 @@ module "website-bucket" {
     target_bucket = module.log_bucket.s3_bucket_id
     target_prefix = "log/"
   }
-}
-
-data "aws_iam_policy_document" "s3_policy" {
-  statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${module.website-bucket.s3_bucket_arn}/*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = module.cloudfront.cloudfront_origin_access_identity_iam_arns
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "bucket_policy" {
-  bucket = module.website-bucket.s3_bucket_id
-  policy = data.aws_iam_policy_document.s3_policy.json
 }
 
 module "log_bucket" {

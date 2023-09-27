@@ -1,9 +1,11 @@
 import json
 import boto3
 import base64
+import os
 from botocore.exceptions import ClientError
 
-region_name = '${data.aws_region.current.name}'
+region_name = "eu-central-1"
+
 
 # Create a Secrets Manager client
 session = boto3.session.Session()
@@ -13,7 +15,7 @@ client = session.client(
 )
 
 def lambda_handler(event, context):
-    secretName = 'OriginVerifySecret'
+    secretName = os.environ['SECRET_NAME']
     secretValue=''
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secretName)
